@@ -1,0 +1,119 @@
+#ifndef __itkQuantizationFilter_hxx
+#define __itkQuantizationFilter_hxx
+
+#include "QuantizationFilter.h"
+
+#include "itkObjectFactory.h"
+#include "itkImageRegionIterator.h"
+#include "itkImageRegionConstIterator.h"
+#include "itkMinimumMaximumImageCalculator.h"
+#include <math.h>
+#include <random>
+namespace itk
+{
+
+template<class TImage>
+QuantizationFilter<TImage>::QuantizationFilter()
+	{
+		this->m_NumberOfBits = 32;
+		//this->SetPitch(5);
+	}
+
+template<class TImage>
+void QuantizationFilter<TImage>::BeforeThreadedGenerateData()
+	{
+		typedef itk::MinimumMaximumImageCalculator< TImage >  CalculatorType;
+		typename CalculatorType::Pointer calculatorI = CalculatorType::New();
+		calculatorI->SetImage(this->GetInput());
+		calculatorI->Compute();
+		m_Maximum = calculatorI->GetMaximum();
+		m_Minimum = calculatorI->GetMinimum();
+		m_Pitch = (m_Maximum - m_Minimum) / pow(2.0, m_NumberOfBits);
+
+		std::cout << "m_NumberOfBits = " << m_NumberOfBits << std::endl;
+		std::cout << "m_Pitch = " << m_Pitch << std::endl;
+		//std::cout << "m_Maximum = " << m_Maximum << std::endl;
+		//std::cout << "m_Maximum = " << m_Maximum << std::endl;
+		
+		std::cout << "m_Maximum = " << m_Maximum << std::endl;
+		std::cout << "m_Minimum = " << m_Minimum << std::endl;
+
+		//m_Maximum += std::numeric_limits<TImage::PixelType>::min();
+	}
+
+
+template< class TImage>
+void QuantizationFilter< TImage>
+::ThreadedGenerateData(const OutputImageRegionType & outputRegionForThread, ThreadIdType threadId)
+{
+
+	typename TImage::ConstPointer input = this->GetInput();
+	typename TImage::Pointer output = this->GetOutput();
+
+	itk::ImageRegionIterator<TImage> out(output, outputRegionForThread);
+	itk::ImageRegionConstIterator<TImage> in(input, outputRegionForThread);
+
+	
+	int BinCounter = -1;
+	typename TImage::ValueType RelativePosition = -1.0; // (in.GetValue() - m_Minimum) / m_Pitch;
+	typename TImage::ValueType NewPixelValue;
+	std::random_device rd;
+	std::mt19937 mt(rd());
+	std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+
+	while (!out.IsAtEnd())
+	{
+		//std::cout << "here" << std::endl;
+		RelativePosition = (in.Get() - m_Minimum) / m_Pitch;
+		BinCounter = std::floor(RelativePosition);
+		if (in.Get() == m_Maximum)
+		{
+			out.Set(m_Maximum);
+			++in;
+			++out;
+			continue;
+		}
+		if (in.Get() == m_Minimum)
+		{
+			out.Set(m_Minimum);
+			++in;
+			++out;
+			continue;
+		}
+				
+		//std::cout << "BinCounter= " << BinCounter << std::endl;
+		NewPixelValue = m_Minimum+BinCounter*m_Pitch;
+		if (dist(mt) > (RelativePosition - BinCounter))
+			out.Set(NewPixelValue );
+		else
+			out.Set(NewPixelValue + m_Pitch);
+		++in;
+		++out;
+	}
+	
+
+  /*std::cout << "Thread " << threadId << " given region: " << region << std::endl;
+
+  typename TImage::ConstPointer input = this->GetInput();
+  typename TImage::Pointer output = this->GetOutput();
+
+  ImageAlgorithm::Copy(input.GetPointer(), output.GetPointer(), region,
+                       region);
+
+  itk::Index<2> cornerPixel = region.GetIndex();
+  std::cout << "cornerPixel: " << cornerPixel << std::endl;
+  typename TImage::PixelType newValue = 3;
+
+  output->SetPixel( cornerPixel, newValue );
+*/
+
+
+
+
+}
+
+}// end namespace
+
+
+#endif

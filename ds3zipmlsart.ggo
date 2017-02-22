@@ -1,0 +1,27 @@
+package "ds3zipmlsart"
+purpose "apply zipml to sart"
+
+option "verbose"     v "Verbose execution"                                     flag   off
+option "config"      - "Config file"                                           string no
+option "geometry"    g "XML geometry file name"                                string yes
+option "output"      o "Output file name"                                      string yes
+option "niterations" n "Number of iterations"                                  int    no   default="5"
+option "time"        t "Records elapsed time during the process"               flag   off
+option "lambda"      l "Convergence factor"                                    double no   default="0.3"
+option "positivity"  - "Enforces positivity during the reconstruction"         flag   off
+option "input"     i "Input volume"              string          no
+option "nprojpersubset" - "Number of projections processed between each update of the reconstructed volume (1 for SART, several for OSSART, all for SIRT)" int no default="1"
+option "nodisplaced"    - "Disable the displaced detector filter"              flag   off
+option "MyVerbose"     -  "Verbose execution"                                     flag   off
+option "nBits" - "Number of Bits"                                  int  multiple  no   default="16"
+
+section "Phase gating"
+option "signal"       - "File containing the phase of each projection"                                              string              no
+option "windowcenter" c "Target reconstruction phase"                                                               float   no default="0"
+option "windowwidth"  w "Tolerance around the target phase to determine in-phase and out-of-phase projections"      float   no default="1"
+option "windowshape"  s "Shape of the gating window"     values="Rectangular","Triangular"                          enum    no default="Rectangular"
+
+section "Projectors"
+option "fp"    f "Forward projection method" values="Joseph","RayCastInterpolator","CudaRayCast" enum no default="Joseph"
+option "bp"    b "Back projection method" values="VoxelBasedBackProjection","Joseph","CudaVoxelBased","NormalizedJoseph","CudaRayCast" enum no default="VoxelBasedBackProjection"
+
